@@ -8,8 +8,7 @@ use kube::{
 };
 use crate::errors::Error;
 
-pub async fn ensure_namespace(name: &str) -> Result<(), Error> {
-    let client = Client::try_default().await?;
+pub async fn ensure_namespace(client: Client, name: &str) -> Result<(), Error> {
     let namespace_api: Api<Namespace> = Api::all(client);
 
     match namespace_api.get(name).await {

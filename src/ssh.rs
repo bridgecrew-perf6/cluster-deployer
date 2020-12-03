@@ -56,8 +56,7 @@ async fn create_secret(api: &Api<Secret>, name: &str, keypair: KeyPair) -> Resul
 }
 
 /// Generate and store SSH key in a Secret if it doesn't exit
-pub async fn ensure_ssh_key(namespace: &str) -> Result<Secret, Error> {
-    let client = Client::try_default().await?;
+pub async fn ensure_ssh_key(client: Client, namespace: &str) -> Result<Secret, Error> {
     let secret_api: Api<Secret> = Api::namespaced(client, namespace);
 
     match secret_api.get(KEY_NAME).await {

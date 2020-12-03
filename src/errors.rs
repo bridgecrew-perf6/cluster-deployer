@@ -32,9 +32,16 @@ impl From<kube::Error> for Error {
     }
 }
 
+impl From<kube_runtime::watcher::Error> for Error {
+    fn from(err: kube_runtime::watcher::Error) -> Self {
+        Error::WatcherError(err)
+    }
+}
+
 #[derive(Debug)]
 pub enum Error {
     KeyGenerationError(KeyGenerationError),
     KubeError(kube::Error),
+    WatcherError(kube_runtime::watcher::Error),
 }
 

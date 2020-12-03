@@ -142,6 +142,7 @@ dependencies = [
 name = "cluster-controller"
 version = "0.1.0"
 dependencies = [
+ "futures",
  "k8s-openapi",
  "kube",
  "kube-runtime",
