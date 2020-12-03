@@ -20,7 +20,7 @@ pub fn make_pod(node_name: &String) -> Pod {
                     command: Some(vec!["/bin/sh".into()]),
                     args: Some(vec![
                         "-c".into(),
-                        "cat /mnt/manager-public-key #>> /mnt/authorized_keys".into()
+                        "cat /mnt/manager-public-key >> /mnt/authorized_keys".into()
                     ]),
                     volume_mounts: Some(vec![
                         VolumeMount {
