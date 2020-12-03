@@ -49,8 +49,9 @@ pub async fn ensure_ssh_key(namespace: &str) -> Result<(), Error> {
     let secret_api: Api<Secret> = Api::namespaced(client, namespace);
 
     match secret_api.get(KEY_NAME).await {
-        Ok(_key) => {
+        Ok(key) => {
             println!("Key {} exists", KEY_NAME);
+            Ok(key)
         },
         Err(kube::Error::Api(err)) => {
           if err.reason == String::from("NotFound") {
@@ -64,12 +65,14 @@ pub async fn ensure_ssh_key(namespace: &str) -> Result<(), Error> {
               secret.string_data = Some(data);
               secret.metadata.name = Some(String::from(KEY_NAME));
 
-              secret_api.create(&PostParams::default(), &secret).await?;
+              secret_api.create(&PostParams::default(), &secret)
+                  .await
+                  .map_err(|err| Error::KubeError(err))
           } else {
-              panic!(err);
+              Err(Error::KubeError(kube::Error::Api(err)))
           }
         },
-        err => panic!(err),
-    };
+        Err(err) => Err(err.into()),
+    }?;
     Ok(())
 }
