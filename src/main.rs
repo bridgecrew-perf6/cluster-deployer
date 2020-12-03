@@ -1,13 +1,13 @@
 mod namespace;
-mod ssh;
 mod errors;
-mod host;
+mod ssh_keygen;
+mod ssh_copy_id;
 
 use kube::Client;
 
 use errors::Error;
 use namespace::ensure_namespace;
-use ssh::ensure_ssh_key;
+use ssh_keygen::ensure_ssh_key;
 
 const NAMESPACE: &str = "cluster-manager";
 
@@ -22,7 +22,7 @@ async fn main() -> Result<(), Error> {
     let client = Client::try_default().await?;
 
     init(client.clone()).await?;
-    host::Preparation::run(client.clone(), NAMESPACE.into()).await?;
+    ssh_copy_id::Preparation::run(client.clone(), NAMESPACE.into()).await?;
 
     Ok(())
 }

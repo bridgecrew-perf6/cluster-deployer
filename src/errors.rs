@@ -44,6 +44,12 @@ impl From<tokio::task::JoinError> for Error {
     }
 }
 
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Self {
+        Error::SerdeJsonError(err)
+    }
+}
+
 #[derive(Debug)]
 pub enum Error {
     KeyGenerationError(KeyGenerationError),
@@ -51,5 +57,6 @@ pub enum Error {
     WatcherError(kube_runtime::watcher::Error),
     JoinError(tokio::task::JoinError),
     MultipleErrors(Vec<Error>),
+    SerdeJsonError(serde_json::Error),
 }
 

@@ -1,12 +1,15 @@
+mod podspec;
+
+use serde_json::json;
 use futures::{StreamExt, TryStreamExt};
-use k8s_openapi::api::core::v1::{Node, Pod, PodSpec, Container, VolumeMount, Volume, HostPathVolumeSource, SecretVolumeSource};
+use k8s_openapi::api::core::v1::{Node, Pod};
 use kube::{
-    api::{Api, ListParams, PostParams},
+    api::{Api, ListParams, PatchParams, PostParams, WatchEvent},
     Client
 };
+
 use crate::errors::Error;
-use std::collections::BTreeMap;
-use kube::api::WatchEvent;
+use crate::ssh_copy_id::podspec::make_pod;
 
 pub struct Preparation {}
 
@@ -38,70 +41,22 @@ async fn wait_for_pod(pods: &Api<Pod>, node_name: &String, pod_name: &String) ->
 
 async fn add_ssh_key(client: Client, namespace: String, node: &Node) -> Result<(), Error> {
     let pods: Api<Pod> = Api::namespaced(client.clone(), namespace.as_ref());
+    let nodes: Api<Node> = Api::all(client.clone());
     let node_name = node.metadata.name.as_ref().unwrap().clone();
 
-    let mut pod = Pod {
-        spec: Some(PodSpec {
-            node_name: Some(node_name.clone()),
-            containers: vec![
-                Container {
-                    image: Some(String::from("busybox")),
-                    name: "copy".into(),
-                    command: Some(vec!["/bin/sh".into()]),
-                    args: Some(vec![
-                        "-c".into(),
-                        "cat /mnt/manager-public-key #>> /mnt/authorized_keys".into()
-                    ]),
-                    volume_mounts: Some(vec![
-                        VolumeMount {
-                            name: "public-key".into(),
-                            read_only: Some(true),
-                            mount_path: "/mnt/manager-public-key".into(),
-                            sub_path: Some("public_key".into()),
-                            .. VolumeMount::default()
-                        },
-                        VolumeMount {
-                            name: "authorized-keys".into(),
-                            read_only: Some(false),
-                            mount_path: "/mnt/authorized_keys".into(),
-                            .. VolumeMount::default()
-                        }
-                    ]),
-                    .. Container::default()
-                }
-            ],
-            volumes: Some(vec![
-                Volume {
-                    name: "public-key".into(),
-                    secret: Some(SecretVolumeSource {
-                        secret_name: Some("admin-key".into()),
-                        .. SecretVolumeSource::default()
-                    }),
-                    .. Volume::default()
-                },
-                Volume {
-                    name: "authorized-keys".into(),
-                    host_path: Some(HostPathVolumeSource {
-                        path: "/root/.ssh/authorized_keys".into(),
-                        type_: Some("File".into())
-                    }),
-                    .. Volume::default()
-                }
-            ]),
-            restart_policy: Some("OnFailure".into()),
-            .. PodSpec::default()
-        }),
-        .. Pod::default()
-    };
-    let pod_name = format!("add-ssh-key-{}", &node_name);
-
-    pod.metadata.name = Some(pod_name.clone());
-    pod.metadata.labels = Some(BTreeMap::new());
-    pod.metadata.labels.as_mut().unwrap().insert("app".into(), "cluster-manager".into());
-    pod.metadata.labels.as_mut().unwrap().insert("task".into(), "copy-ssh-key".into());
+    let pod = make_pod(&node_name);
+    let pod_name = pod.metadata.name.as_ref().unwrap();
 
     pods.create(&PostParams::default(), &pod).await?;
     wait_for_pod(&pods, &node_name, &pod_name).await?;
+
+    nodes.patch(
+        &node_name,
+        &PatchParams::default(),
+        serde_json::to_vec(
+            &json!({ "metadata": { "annotations": { "cluster-manager/ssh": "true" } } })
+        )?
+    ).await?;
     Ok(())
 }
 
@@ -114,6 +69,7 @@ async fn prepare_host(client: Client, namespace: String, node: Node) -> Result<(
     };
 
     if node.metadata.annotations.as_ref().unwrap().contains_key(ANNOTATION_SSH) {
+        log(format!("{} annotation present, skipping", ANNOTATION_SSH).as_ref());
         return Ok(());
     }
 
