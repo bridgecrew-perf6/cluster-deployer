@@ -7,7 +7,7 @@ use kube::{
     Client,
 };
 
-use crate::errors::{Error, KeyGenerationError::{self, CommandError}};
+use crate::errors::{Error, KeyGenerationError};
 
 const KEY_NAME: &str = "admin-key";
 
@@ -17,8 +17,8 @@ struct KeyPair {
     public_key: String,
 }
 
+/// Generate a new SSH private/public keypair in a temporary location
 fn generate_ssh_keypair() -> Result<KeyPair, KeyGenerationError> {
-    /// Generate a new SSH private/public keypair in a temporary location
     let dir = tempdir()?;
     println!("Generating key in {}", dir.path().display());
     let result = Command::new("ssh-keygen")
@@ -42,14 +42,14 @@ fn generate_ssh_keypair() -> Result<KeyPair, KeyGenerationError> {
     })
 }
 
+/// Create SSH keypair if it doesn't exist
+/// Finished keypair will be stored in a k8s Secret.
 pub async fn ensure_ssh_key(namespace: &str) -> Result<(), Error> {
-    /// Create SSH keypair if it doesn't exist
-    /// Finished keypair will be stored in a k8s Secret.
     let client = Client::try_default().await?;
     let secret_api: Api<Secret> = Api::namespaced(client, namespace);
 
     match secret_api.get(KEY_NAME).await {
-        Ok(key) => {
+        Ok(_key) => {
             println!("Key {} exists", KEY_NAME);
         },
         Err(kube::Error::Api(err)) => {
