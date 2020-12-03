@@ -22,7 +22,7 @@ async fn main() -> Result<(), Error> {
     let client = Client::try_default().await?;
 
     init(client.clone()).await?;
-    host::Preparation::run(client.clone()).await?;
+    host::Preparation::run(client.clone(), NAMESPACE.into()).await?;
 
     Ok(())
 }

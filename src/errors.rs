@@ -38,10 +38,18 @@ impl From<kube_runtime::watcher::Error> for Error {
     }
 }
 
+impl From<tokio::task::JoinError> for Error {
+    fn from(err: tokio::task::JoinError) -> Self {
+        Error::JoinError(err)
+    }
+}
+
 #[derive(Debug)]
 pub enum Error {
     KeyGenerationError(KeyGenerationError),
     KubeError(kube::Error),
     WatcherError(kube_runtime::watcher::Error),
+    JoinError(tokio::task::JoinError),
+    MultipleErrors(Vec<Error>),
 }
 
