@@ -65,6 +65,8 @@ pub async fn ensure_ssh_key(namespace: &str) -> Result<(), Error> {
               secret.metadata.name = Some(String::from(KEY_NAME));
 
               secret_api.create(&PostParams::default(), &secret).await?;
+          } else {
+              panic!(err);
           }
         },
         err => panic!(err),
