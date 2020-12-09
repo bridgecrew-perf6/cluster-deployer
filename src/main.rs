@@ -1,16 +1,14 @@
-mod namespace;
 mod errors;
-mod ssh_keygen;
-mod ssh_copy_id;
-mod ovs;
 mod ansible;
 mod utils;
+mod host_tasks;
+mod cluster_tasks;
 
 use kube::Client;
 
 use errors::Error;
-use namespace::ensure_namespace;
-use ssh_keygen::ensure_ssh_key;
+use cluster_tasks::{namespace::ensure_namespace, ssh_keygen::ensure_ssh_key};
+use host_tasks::{ssh_copy_id, ovs};
 
 const NAMESPACE: &str = "cluster-manager";
 
