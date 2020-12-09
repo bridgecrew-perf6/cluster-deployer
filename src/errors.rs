@@ -36,5 +36,17 @@ generate_error! {
         JoinError: tokio::task::JoinError,
         MultipleErrors: Vec<Error>,
         SerdeJsonError: serde_json::Error,
+        PodFailure: PodFailure,
+        Timeout: Timeout,
     ]
+}
+
+#[derive(Debug)]
+pub struct PodFailure {
+    pub name: String,
+}
+
+#[derive(Debug)]
+pub struct Timeout {
+    pub operation: String,
 }

@@ -2,6 +2,9 @@ mod namespace;
 mod errors;
 mod ssh_keygen;
 mod ssh_copy_id;
+mod ovs;
+mod ansible;
+mod utils;
 
 use kube::Client;
 
@@ -22,7 +25,8 @@ async fn main() -> Result<(), Error> {
     let client = Client::try_default().await?;
 
     init(client.clone()).await?;
-    ssh_copy_id::Preparation::run(client.clone(), NAMESPACE.into()).await?;
+    ssh_copy_id::run(client.clone(), NAMESPACE.into()).await?;
+    ovs::run(client.clone(), NAMESPACE.into()).await?;
 
     Ok(())
 }
