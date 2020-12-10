@@ -8,7 +8,7 @@ use kube::Client;
 
 use errors::Error;
 use cluster_tasks::{namespace::ensure_namespace, ssh_keygen::ensure_ssh_key};
-use host_tasks::{ssh_copy_id, ovs};
+use host_tasks::{ssh_copy_id, ovs, libvirt};
 
 const NAMESPACE: &str = "cluster-manager";
 
@@ -25,6 +25,7 @@ async fn main() -> Result<(), Error> {
     init(client.clone()).await?;
     ssh_copy_id::run(client.clone(), NAMESPACE.into()).await?;
     ovs::run(client.clone(), NAMESPACE.into()).await?;
+    libvirt::run(client.clone(), NAMESPACE.into()).await?;
 
     Ok(())
 }
