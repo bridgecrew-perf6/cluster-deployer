@@ -1,5 +1,5 @@
 [package]
-name = "cluster-controller"
+name = "cluster-deployer"
 version = "0.1.0"
 authors = ["Esa Varemo <esa@kuivanto.fi>"]
 edition = "2018"
